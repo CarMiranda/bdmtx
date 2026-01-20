@@ -9,6 +9,7 @@ dependencies = [
     "numpy>=2.4.1",
     "onnxruntime>=1.23.2",
     "opencv-python-headless>=4.13.0.90",
+    "pillow>=12.1.0",
 ]
 
 [project.scripts]
@@ -17,3 +18,8 @@ bdmtx = "bdmtx:main"
 [build-system]
 requires = ["uv_build>=0.9.24,<0.10.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+test = [
+    "pytest>=9.0.2",
+]

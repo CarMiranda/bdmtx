@@ -8,7 +8,6 @@ This is a conservative starter implementation to produce training samples for Ph
 
 from __future__ import annotations
 
-import math
 import random
 from pathlib import Path
 

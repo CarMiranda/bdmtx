@@ -16,7 +16,9 @@ import cv2
 import numpy as np
 
 
-def build_mask_from_segmentation(segmentation: List[float] | List[List[float]], width: int, height: int) -> np.ndarray:
+def build_mask_from_segmentation(
+    segmentation: List[float] | List[List[float]], width: int, height: int
+) -> np.ndarray:
     """Build a binary mask (uint8 0/255) from a COCO-style segmentation.
 
     segmentation may be either a single flat list [x1,y1,x2,y2,...] or a
@@ -49,7 +51,9 @@ class SyntheticDataset:
     minimal COCO-like structure produced by the generator.
     """
 
-    def __init__(self, root: Path, split: str = "degraded", transforms: Optional[Callable] = None):
+    def __init__(
+        self, root: Path, split: str = "degraded", transforms: Optional[Callable] = None
+    ):
         self.root = Path(root)
         self.split = split
         self.transforms = transforms
@@ -59,10 +63,16 @@ class SyntheticDataset:
         for p in sorted(self.root.glob(pattern)):
             idx = p.stem.split("_")[-1]
             sample = {
-                "clean": (self.root / f"clean_{idx}.png") if (self.root / f"clean_{idx}.png").exists() else None,
-                "degraded": (self.root / f"degraded_{idx}.png") if (self.root / f"degraded_{idx}.png").exists() else None,
+                "clean": (self.root / f"clean_{idx}.png")
+                if (self.root / f"clean_{idx}.png").exists()
+                else None,
+                "degraded": (self.root / f"degraded_{idx}.png")
+                if (self.root / f"degraded_{idx}.png").exists()
+                else None,
                 "image": p,
-                "annotation": (self.root / f"{p.stem}.json") if (self.root / f"{p.stem}.json").exists() else None,
+                "annotation": (self.root / f"{p.stem}.json")
+                if (self.root / f"{p.stem}.json").exists()
+                else None,
             }
             self.samples.append(sample)
 
@@ -124,12 +134,16 @@ def simple_augmentation(sample: Dict) -> Dict:
                 M = cv2.getRotationMatrix2D((w / 2.0, h / 2.0), angle, 1.0)
                 border = cv2.BORDER_REFLECT
                 interp = cv2.INTER_LINEAR if img.ndim == 3 else cv2.INTER_NEAREST
-                sample[k] = cv2.warpAffine(img, M, (w, h), flags=interp, borderMode=border)
+                sample[k] = cv2.warpAffine(
+                    img, M, (w, h), flags=interp, borderMode=border
+                )
 
     if "image" in sample and sample["image"] is not None:
         alpha = float(np.random.uniform(0.9, 1.1))
         beta = float(np.random.uniform(-10, 10))
-        sample["image"] = np.clip(alpha * sample["image"].astype(np.float32) + beta, 0, 255).astype(np.uint8)
+        sample["image"] = np.clip(
+            alpha * sample["image"].astype(np.float32) + beta, 0, 255
+        ).astype(np.uint8)
 
     return sample
 
@@ -163,7 +177,11 @@ def validate_dataset(root: Path) -> List[str]:
         degraded_p = root / f"degraded_{idx}.png"
         ann_p_degraded = root / f"degraded_{idx}.json"
         ann_p_clean = root / f"clean_{idx}.json"
-        ann_p = ann_p_degraded if ann_p_degraded.exists() else (ann_p_clean if ann_p_clean.exists() else None)
+        ann_p = (
+            ann_p_degraded
+            if ann_p_degraded.exists()
+            else (ann_p_clean if ann_p_clean.exists() else None)
+        )
 
         if not (clean_p.exists() or degraded_p.exists()):
             errors.append(f"Missing both clean and degraded images for idx {idx}")
@@ -202,12 +220,25 @@ def validate_dataset(root: Path) -> List[str]:
         h, w = img.shape[:2]
 
         coords = np.asarray(poly, dtype=np.float32).reshape(-1, 2)
-        if np.any(coords[:, 0] < 0) or np.any(coords[:, 1] < 0) or np.any(coords[:, 0] > w) or np.any(coords[:, 1] > h):
-            errors.append(f"Segmentation coordinates outside image bounds for idx {idx}")
+        if (
+            np.any(coords[:, 0] < 0)
+            or np.any(coords[:, 1] < 0)
+            or np.any(coords[:, 0] > w)
+            or np.any(coords[:, 1] > h)
+        ):
+            errors.append(
+                f"Segmentation coordinates outside image bounds for idx {idx}"
+            )
             continue
 
         # polygon area (shoelace)
-        area = abs(np.sum(coords[:, 0] * np.roll(coords[:, 1], -1) - coords[:, 1] * np.roll(coords[:, 0], -1)) / 2.0)
+        area = abs(
+            np.sum(
+                coords[:, 0] * np.roll(coords[:, 1], -1)
+                - coords[:, 1] * np.roll(coords[:, 0], -1)
+            )
+            / 2.0
+        )
         if area <= 0:
             errors.append(f"Segmentation area is zero for idx {idx}")
 
