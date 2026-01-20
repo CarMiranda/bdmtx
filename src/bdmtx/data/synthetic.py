@@ -34,19 +34,21 @@ def render_datamatrix(size: int = 64) -> np.ndarray:
     return symbol
 
 
-def overlay_on_texture(symbol: np.ndarray, texture: np.ndarray) -> np.ndarray:
-    """Overlay the symbol onto a background texture with slight blending."""
+def overlay_on_texture(symbol: np.ndarray, texture: np.ndarray, x: int | None = None, y: int | None = None) -> np.ndarray:
+    """Overlay the symbol onto a background texture with slight blending.
+    If x,y provided, place symbol at those coordinates; otherwise choose random placement.
+    """
     h, w = texture.shape[:2]
     sh, sw = symbol.shape
-    # place symbol roughly centered
-    y = (h - sh) // 2 + random.randint(-10, 10)
-    x = (w - sw) // 2 + random.randint(-10, 10)
+    if y is None:
+        y = (h - sh) // 2 + random.randint(-10, 10)
+    if x is None:
+        x = (w - sw) // 2 + random.randint(-10, 10)
     out = texture.copy().astype(np.float32) / 255.0
     sym = np.stack([symbol / 255.0] * 3, axis=-1)
     # Emulate engraving by darkening the symbol area and adding specular
     mask = sym[..., 0] > 0.5
     out[y : y + sh, x : x + sw][mask] *= 0.3 + 0.2 * random.random()
-    # Add slight highlight along top-left edges
     return (np.clip(out, 0.0, 1.0) * 255).astype(np.uint8)
 
 
@@ -101,13 +103,57 @@ def generate_pair(out_dir: Path, index: int, size: tuple[int, int] = (256, 256))
     out_dir.mkdir(parents=True, exist_ok=True)
     texture = random_texture(size)
     symbol = render_datamatrix(size=64)
-    clean = overlay_on_texture(symbol, texture)
+    sh, sw = symbol.shape
+
+    h, w = size
+    # place symbol roughly centered (deterministic offset used for annotation)
+    y = (h - sh) // 2 + random.randint(-10, 10)
+    x = (w - sw) // 2 + random.randint(-10, 10)
+
+    clean = overlay_on_texture(symbol, texture, x=x, y=y)
     degraded = degrade_image(clean)
 
     clean_path = out_dir / f"clean_{index:06d}.png"
     degraded_path = out_dir / f"degraded_{index:06d}.png"
     cv2.imwrite(str(clean_path), clean)
     cv2.imwrite(str(degraded_path), degraded)
+
+    # COCO-style annotation (single annotation per image)
+    poly = [float(x), float(y), float(x + sw), float(y), float(x + sw), float(y + sh), float(x), float(y + sh)]
+    annotation = {
+        "id": index,
+        "image_id": index,
+        "category_id": 1,
+        "bbox": [int(x), int(y), int(sw), int(sh)],
+        "segmentation": [poly],
+        "area": int(sw * sh),
+        "attributes": {"content": f"dm_{index:06d}", "type": "datamatrix"},
+    }
+
+    ann_common = {
+        "categories": [{"id": 1, "name": "datamatrix"}],
+        "annotations": [annotation],
+    }
+
+    import json
+
+    ann_clean = {
+        "images": [{"id": index, "width": w, "height": h, "file_name": clean_path.name}],
+        **ann_common,
+    }
+    ann_degraded = {
+        "images": [{"id": index, "width": w, "height": h, "file_name": degraded_path.name}],
+        **ann_common,
+    }
+
+    ann_path_clean = out_dir / f"{clean_path.stem}.json"
+    ann_path_degraded = out_dir / f"{degraded_path.stem}.json"
+
+    with open(ann_path_clean, "w", encoding="utf-8") as fh:
+        json.dump(ann_clean, fh, ensure_ascii=False)
+
+    with open(ann_path_degraded, "w", encoding="utf-8") as fh:
+        json.dump(ann_degraded, fh, ensure_ascii=False)
 
 
 def create_dataset(root: Path, n: int = 1000, size: tuple[int, int] = (256, 256)) -> None:
