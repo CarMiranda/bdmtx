@@ -43,10 +43,10 @@ def make_ultralytics_dataset_yaml(root: Path, out: Path, train_fraction: float =
         yaml.safe_dump(data, fh)
 
 
-def train_ultralytics(yaml_path: Path, epochs: int = 50, model: str = "yolov8n-seg", batch: int = 16, img_size: int = 640) -> None:
-    """Invoke Ultralytics training using the Python API.
+def train_ultralytics(yaml_path: Path, epochs: int = 50, model: str = "yolov8n-seg", batch: int = 16, img_size: int = 640, project: str = 'runs/train', name: str = 'exp') -> None:
+    """Invoke Ultralytics training using the Python API with checkpointing support.
 
-    This requires `ultralytics` to be installed in the environment.
+    Saves checkpoints under project/name and can resume from last.pt using resume=True.
     """
     try:
         from ultralytics import YOLO
@@ -54,4 +54,22 @@ def train_ultralytics(yaml_path: Path, epochs: int = 50, model: str = "yolov8n-s
         raise RuntimeError("ultralytics must be installed to run training") from exc
 
     model_obj = YOLO(model)
-    model_obj.train(data=str(yaml_path), epochs=epochs, batch=batch, imgsz=img_size)
+    # ultralytics will save checkpoints to runs/train/{name}
+    model_obj.train(data=str(yaml_path), epochs=epochs, batch=batch, imgsz=img_size, project=project, name=name)
+
+
+def last_checkpoint_path(project: str = 'runs/train', name: str = 'exp') -> Path | None:
+    """Return path to the last checkpoint (best.pt or last.pt) if present.
+
+    Useful for preemptible resume logic on trainer VM.
+    """
+    out = Path(project) / name
+    if not out.exists():
+        return None
+    best = out / 'weights' / 'best.pt'
+    last = out / 'weights' / 'last.pt'
+    if best.exists():
+        return best
+    if last.exists():
+        return last
+    return None
