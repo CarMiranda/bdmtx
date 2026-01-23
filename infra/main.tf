@@ -80,5 +80,5 @@ resource "google_compute_instance" "trainer" {
 
   lifecycle {
     create_before_destroy = true
-n  }
+  }
 }
