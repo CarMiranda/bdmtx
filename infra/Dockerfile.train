@@ -1,0 +1,16 @@
+FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
+
+# Minimal training image with Python, pip and common ML deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 python3-pip python3-venv git ca-certificates && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt /workspace/requirements.txt
+RUN pip3 install --upgrade pip && pip3 install -r /workspace/requirements.txt
+
+# Install ultralytics explicitly (may pull extra dependencies)
+RUN pip3 install ultralytics
+
+WORKDIR /workspace
+COPY . /workspace
+
+ENTRYPOINT ["/bin/bash"]
