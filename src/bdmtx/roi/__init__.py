@@ -1,13 +1,17 @@
-"""ROI extraction and homography utilities (stubs)."""
+"""ROI utilities package re-export."""
 
 from __future__ import annotations
 
+from .homography import (
+    extract_and_normalize_roi,
+    quadrilateral_from_contour,
+    largest_contour_from_mask,
+    warp_quad_to_square,
+)
 
-def extract_roi_from_mask(image, mask) -> object:
-    """Stub: return placeholder ROI object."""
-    return None
-
-
-def apply_homography(roi) -> object:
-    """Stub: return normalized ROI placeholder."""
-    return None
+__all__ = [
+    "extract_and_normalize_roi",
+    "quadrilateral_from_contour",
+    "largest_contour_from_mask",
+    "warp_quad_to_square",
+]
