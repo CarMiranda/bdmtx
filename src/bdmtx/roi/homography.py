@@ -53,8 +53,26 @@ def quadrilateral_from_contour(cnt: "np.ndarray") -> Optional[np.ndarray]:
         # fallback to minAreaRect
         rect = cv2.minAreaRect(cnt.astype(np.float32))
         pts = cv2.boxPoints(rect)
+
     # order points tl, tr, br, bl
     pts_ordered = _order_quad_points(pts)
+
+    # If aspect ratio is extreme, attempt to expand by finding convex hull of contour
+    try:
+        x_min, y_min = pts_ordered[:, 0].min(), pts_ordered[:, 1].min()
+        x_max, y_max = pts_ordered[:, 0].max(), pts_ordered[:, 1].max()
+        w = x_max - x_min
+        h = y_max - y_min
+        if w > 0 and h > 0:
+            ar = max(w / h, h / w)
+            if ar > 4.0:
+                hull = cv2.convexHull(cnt.astype(np.int32))
+                rect = cv2.minAreaRect(hull)
+                pts = cv2.boxPoints(rect)
+                pts_ordered = _order_quad_points(pts)
+    except Exception:
+        pass
+
     return pts_ordered
 
 
