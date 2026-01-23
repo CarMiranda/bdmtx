@@ -1,11 +1,7 @@
-"""Enhancement model interface (stub).
-
-This module will implement model loading and enhancement APIs.
-"""
+"""Enhancement model interface and helper re-exports."""
 
 from __future__ import annotations
 
+from .enhancer import enhance, export_to_onnx
 
-def enhance(roi) -> object:
-    """Stub: return roi unchanged."""
-    return roi
+__all__ = ["enhance", "export_to_onnx"]
