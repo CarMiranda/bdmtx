@@ -62,9 +62,16 @@ resource "google_compute_instance" "trainer" {
   scheduling {
     on_host_maintenance = "TERMINATE"
     automatic_restart   = false
+    preemptible         = true
   }
 
   metadata_startup_script = file("startup.sh")
+
+  metadata = {
+    # shutdown-script will be executed on VM termination/preemption to upload checkpoints
+    shutdown-script = file("artifacts/preempt_hook.sh")
+    GCS_BUCKET = var.bucket_name
+  }
 
   service_account {
     email  = google_service_account.trainer.email
