@@ -14,6 +14,11 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("image", help="Path to input image")
     run.add_argument("--no-enhance", action="store_true", help="Skip enhancement step")
 
+    evalp = sub.add_parser("eval", help="Evaluate on dataset")
+    evalp.add_argument("dataset_root", help="Path to dataset root")
+    evalp.add_argument("--out", default="eval_results.json", help="Output JSON")
+    evalp.add_argument("--max", type=int, default=None, help="Max images to evaluate")
+
     return parser
 
 
@@ -24,6 +29,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "run":
         print(f"Would run pipeline on: {args.image} (no-enhance={args.no_enhance})")
+    elif args.command == "eval":
+        from bdmtx.cli.eval_cli import main as eval_main
+        return eval_main([args.dataset_root, "--out", args.out] + (["--max", str(args.max)] if args.max else []))
     else:
         parser.print_help()
     return 0
