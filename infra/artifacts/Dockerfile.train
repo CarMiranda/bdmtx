@@ -1,16 +1,25 @@
 FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
 
-# Minimal training image with Python, pip and common ML deps
+# Use a consistent Python runtime
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 python3-pip python3-venv git ca-certificates && rm -rf /var/lib/apt/lists/*
+    python3 python3-pip python3-venv git ca-certificates wget && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt /workspace/requirements.txt
-RUN pip3 install --upgrade pip && pip3 install -r /workspace/requirements.txt
-
-# Install ultralytics explicitly (may pull extra dependencies)
-RUN pip3 install ultralytics
+# Ensure pip is up-to-date
+RUN python3 -m pip install --upgrade pip setuptools wheel
 
 WORKDIR /workspace
+COPY requirements.txt /workspace/requirements.txt
+
+# Install torch with matching CUDA for the base image (example: pip wheel URL may need adjustment per CUDA/toolkit)
+# NOTE: Adjust the torch+cu version to match the target GPU driver in your VM.
+RUN pip3 install --no-cache-dir torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu121
+
+# Install remaining requirements and ultralytics
+RUN pip3 install --no-cache-dir -r /workspace/requirements.txt
+RUN pip3 install --no-cache-dir ultralytics
+
+# Copy workspace
 COPY . /workspace
 
 ENTRYPOINT ["/bin/bash"]
