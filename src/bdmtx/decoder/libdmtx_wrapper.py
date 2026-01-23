@@ -22,7 +22,15 @@ def _try_libdmtx_decode(image: "np.ndarray") -> dict:
         if not results:
             return {"success": False, "data": None, "confidence": None, "logs": ["no result"]}
         r = results[0]
-        return {"success": True, "data": r.data.decode('utf-8') if isinstance(r.data, (bytes, bytearray)) else str(r.data), "confidence": None, "logs": [str(r)]}
+        data = r.data.decode('utf-8') if isinstance(r.data, (bytes, bytearray)) else str(r.data)
+        # pylibdmtx does not expose confidence; estimate it from quality if present
+        conf = None
+        if hasattr(r, 'quality'):
+            try:
+                conf = float(r.quality)
+            except Exception:
+                conf = None
+        return {"success": True, "data": data, "confidence": conf, "logs": [str(r)]}
     except Exception as exc:
         return {"success": False, "data": None, "confidence": None, "logs": [f"libdmtx error: {exc}"]}
 
@@ -60,12 +68,24 @@ def decode_with_fallbacks(image: "np.ndarray") -> dict:
         for beta in (-20, 0, 20):
             adj = cv2.convertScaleAbs(gray, alpha=alpha, beta=beta)
             res = _try_libdmtx_decode(adj)
-            logs.extend(res.get("logs", []))
+            # include which transform was used in logs for debugging
+            logs.extend([f"contrast alpha={alpha} beta={beta}"] + res.get("logs", []))
             if res.get("success"):
                 return res
+
+    # 4) multi-scale attempts
+    for scale in (0.5, 1.0, 1.5):
+        h, w = gray.shape
+        resized = cv2.resize(gray, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_LINEAR)
+        res = _try_libdmtx_decode(resized)
+        logs.extend([f"scale={scale}"] + res.get("logs", []))
+        if res.get("success"):
+            return res
 
     return {"success": False, "data": None, "confidence": None, "logs": logs}
 
 
 def decode_image(image: "np.ndarray") -> dict:
+    if image is None:
+        return {"success": False, "data": None, "confidence": None, "logs": ["no image"]}
     return decode_with_fallbacks(image)
