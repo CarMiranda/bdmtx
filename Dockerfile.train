@@ -12,11 +12,13 @@ WORKDIR /workspace
 
 # Install torch with matching CUDA for the base image (example: pip wheel URL may need adjustment per CUDA/toolkit)
 # NOTE: Adjust the torch+cu version to match the target GPU driver in your VM.
-RUN pip3 install --no-cache-dir torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu121
+RUN --mount=type=cache,target=/root/.cache/pip \
+  pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 
 # Install remaining requirements and ultralytics
 COPY requirements.txt /workspace/requirements.txt
-RUN pip3 install --no-cache-dir -r /workspace/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+  pip3 install -r /workspace/requirements.txt
 
 # Copy workspace
 COPY . /workspace
