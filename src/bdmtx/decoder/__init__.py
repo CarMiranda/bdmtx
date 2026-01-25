@@ -2,16 +2,21 @@
 
 from __future__ import annotations
 
-import warnings
+from bdmtx.decoder.libdmtx_wrapper import (
+    Result,
+)
+from bdmtx.decoder.libdmtx_wrapper import (
+    decode_with_fallbacks as decode_image_libdmtx,
+)
 
-try:
-    from .libdmtx_wrapper import decode_image as decode_image_libdmtx
-except Exception:  # pragma: no cover - dependency optional
-    decode_image_libdmtx = None
 
+def decode_image(image) -> Result:
+    """Decode an image.
 
-def decode_image(image) -> dict:
-    if decode_image_libdmtx is None:
-        warnings.warn("libdmtx wrapper not available; decoder will always fail unless pylibdmtx is installed")
-        return {"success": False, "data": None}
+    Args:
+        image: np.ndarray, or PIL.image
+
+    Returns:
+        datamatrix decoding result record
+    """
     return decode_image_libdmtx(image)

@@ -1,11 +1,15 @@
-.PHONY: install-dev test lint
+.PHONY: clean test lint
 
-install-dev:
-	python -m pip install --upgrade pip
-	pip install -r requirements-dev.txt
+clean:
+	find . -name "*.pyi" -type d -exec rm -rf {} +
+	find . -name "__pycache__" -type d -exec rm -rf {} +
+	rm -rf build .coverage public coverage.xml
 
 test:
-	pytest -q
+	uv run --group=test -- coverage run -m pytest
+	uv run --group=test -- coverage combine || true
+	uv run --group=test -- coverage report -m
+	uv run --group=test -- coverage xml
 
 lint:
-	flake8 src tests
+	uv run -- pre-commit run --all-files

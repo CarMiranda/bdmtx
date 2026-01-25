@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+from .geometry import expand_quad, is_convex_quad, quad_area
 from .homography import (
     extract_and_normalize_roi,
-    quadrilateral_from_contour,
     largest_contour_from_mask,
+    quadrilateral_from_contour,
     warp_quad_to_square,
 )
-from .geometry import quad_area, is_convex_quad, expand_quad
 
 __all__ = [
     "extract_and_normalize_roi",

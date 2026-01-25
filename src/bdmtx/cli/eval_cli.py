@@ -5,11 +5,15 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+
 from bdmtx.eval.harness import evaluate_dataset
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="bdmtx-eval", description="Evaluate bdmtx pipeline on a dataset")
+    """CLI to prepare dataset and invoke segmentation training helper."""
+    parser = argparse.ArgumentParser(
+        prog="bdmtx-eval", description="Evaluate bdmtx pipeline on a dataset"
+    )
     parser.add_argument("dataset_root", type=Path, help="Path to dataset root")
     parser.add_argument("--out", type=Path, default=Path("eval_results.json"))
     parser.add_argument("--max", type=int, default=None)

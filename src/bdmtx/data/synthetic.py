@@ -28,14 +28,31 @@ def render_datamatrix(size: int = 64) -> np.ndarray:
     # Fill with pseudo-random modules
     rng = np.random.default_rng()
     modules = rng.integers(0, 2, size=(size // 4, size // 4))
-    modules = cv2.resize(modules.astype(np.uint8) * 255, (size - 6, size - 6), interpolation=cv2.INTER_NEAREST)
+    modules = cv2.resize(
+        modules.astype(np.uint8) * 255,
+        (size - 6, size - 6),
+        interpolation=cv2.INTER_NEAREST,
+    )
     symbol[3:-3, 3:-3] = modules
     return symbol
 
 
-def overlay_on_texture(symbol: np.ndarray, texture: np.ndarray, x: int | None = None, y: int | None = None) -> np.ndarray:
+def overlay_on_texture(
+    symbol: np.ndarray, texture: np.ndarray, x: int | None = None, y: int | None = None
+) -> np.ndarray:
     """Overlay the symbol onto a background texture with slight blending.
-    If x,y provided, place symbol at those coordinates; otherwise choose random placement.
+
+    If x,y provided, place symbol at those coordinates; otherwise choose random
+    placement.
+
+    Args:
+        symbol: symbol image
+        texture: texture image
+        x: abscissa to position the symbol
+        y: ordinates to position the symbol
+
+    Returns:
+        a blended image of the symbol on the texture
     """
     h, w = texture.shape[:2]
     sh, sw = symbol.shape
@@ -98,7 +115,14 @@ def degrade_image(image: np.ndarray) -> np.ndarray:
     return cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
 
 
-def generate_pair(out_dir: Path, index: int, size: tuple[int, int] = (256, 256)) -> None:
+def generate_pair(out_dir: Path, index: int, size: tuple[int, int] = (256, 256)):
+    """Generate a clean and degraded images pair.
+
+    Args:
+        out_dir: output directory
+        index: integer identifier
+        size: target image size
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
     texture = random_texture(size)
     symbol = render_datamatrix(size=64)
@@ -118,7 +142,16 @@ def generate_pair(out_dir: Path, index: int, size: tuple[int, int] = (256, 256))
     cv2.imwrite(str(degraded_path), degraded)
 
     # COCO-style annotation (single annotation per image)
-    poly = [float(x), float(y), float(x + sw), float(y), float(x + sw), float(y + sh), float(x), float(y + sh)]
+    poly = [
+        float(x),
+        float(y),
+        float(x + sw),
+        float(y),
+        float(x + sw),
+        float(y + sh),
+        float(x),
+        float(y + sh),
+    ]
     annotation = {
         "id": index,
         "image_id": index,
@@ -137,11 +170,15 @@ def generate_pair(out_dir: Path, index: int, size: tuple[int, int] = (256, 256))
     import json
 
     ann_clean = {
-        "images": [{"id": index, "width": w, "height": h, "file_name": clean_path.name}],
+        "images": [
+            {"id": index, "width": w, "height": h, "file_name": clean_path.name}
+        ],
         **ann_common,
     }
     ann_degraded = {
-        "images": [{"id": index, "width": w, "height": h, "file_name": degraded_path.name}],
+        "images": [
+            {"id": index, "width": w, "height": h, "file_name": degraded_path.name}
+        ],
         **ann_common,
     }
 
@@ -155,7 +192,9 @@ def generate_pair(out_dir: Path, index: int, size: tuple[int, int] = (256, 256))
         json.dump(ann_degraded, fh, ensure_ascii=False)
 
 
-def create_dataset(root: Path, n: int = 1000, size: tuple[int, int] = (256, 256)) -> None:
+def create_dataset(
+    root: Path, n: int = 1000, size: tuple[int, int] = (256, 256)
+) -> None:
     """Create n paired samples under root/clean and root/degraded."""
     out = root
     for i in range(n):
@@ -165,7 +204,9 @@ def create_dataset(root: Path, n: int = 1000, size: tuple[int, int] = (256, 256)
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Generate synthetic DPM dataset (basic)")
+    parser = argparse.ArgumentParser(
+        description="Generate synthetic DPM dataset (basic)"
+    )
     parser.add_argument("out_dir", type=Path)
     parser.add_argument("--n", type=int, default=100)
     args = parser.parse_args()

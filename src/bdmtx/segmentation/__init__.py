@@ -4,17 +4,23 @@ from __future__ import annotations
 
 import os
 import warnings
-from typing import Optional
 
 import numpy as np
 
 from .yoloseg import YOLOSegModel
 
-
-_model: Optional[YOLOSegModel] = None
+_model: YOLOSegModel | None = None
 
 
 def load_default_model(model_path: str | None = None) -> YOLOSegModel:
+    """Load default model.
+
+    Args:
+        model_path: path to the model's weight
+
+    Returns:
+        A yolo-seg model
+    """
     global _model
     if _model is None:
         _model = YOLOSegModel(model_path=model_path)
@@ -26,7 +32,9 @@ def load_default_model(model_path: str | None = None) -> YOLOSegModel:
     return _model
 
 
-def predict_mask(image: "np.ndarray", model_path: str | None = None, conf: float = 0.3) -> np.ndarray:
+def predict_mask(
+    image: np.ndarray, model_path: str | None = None, conf: float = 0.3
+) -> np.ndarray:
     """Predict binary mask for input image using YOLO-seg.
 
     Args:
@@ -37,7 +45,9 @@ def predict_mask(image: "np.ndarray", model_path: str | None = None, conf: float
     Returns:
         uint8 binary mask (0/255)
     """
-    model = load_default_model(model_path=model_path or os.environ.get("BDMTX_YOLO_MODEL"))
+    model = load_default_model(
+        model_path=model_path or os.environ.get("BDMTX_YOLO_MODEL")
+    )
     return model.predict_mask(image, conf=conf)
 
 

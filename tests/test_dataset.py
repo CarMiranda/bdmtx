@@ -1,13 +1,18 @@
+from pathlib import Path
+
 import pytest
 
 cv2 = pytest.importorskip("cv2")
 
-from pathlib import Path
-
 
 def test_dataset_and_validation(tmp_path: Path):
+    """Test dataset and validation."""
     from bdmtx.data import create_dataset
-    from bdmtx.data.dataset import SyntheticDataset, validate_dataset, simple_augmentation
+    from bdmtx.data.dataset import (
+        SyntheticDataset,
+        simple_augmentation,
+        validate_dataset,
+    )
 
     out = tmp_path
     # create a small dataset

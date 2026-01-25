@@ -6,11 +6,12 @@ readme = "README.md"
 authors = [{ name = "Carlos Miranda", email = "carlos.miranda@proton.me" }]
 requires-python = ">=3.12"
 dependencies = [
-    "numpy>=2.4.1",
-    "onnxruntime>=1.23.2",
-    "opencv-python-headless>=4.13.0.90",
-    "pillow>=12.1.0",
-    "ultralytics>=8.0.0",
+  "numpy>=2.4.1",
+  "onnxruntime>=1.23.2",
+  "opencv-python-headless>=4.13.0.90",
+  "pillow>=12.1.0",
+  "pylibdmtx>=0.1.10",
+  "ultralytics>=8.0.0",
 ]
 
 [project.scripts]
@@ -21,6 +22,55 @@ requires = ["uv_build>=0.9.24,<0.10.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
-test = [
-    "pytest>=9.0.2",
+dev = ["pre-commit>=4.5.1", "ruff>=0.14.14", "ty>=0.0.13"]
+test = ["coverage>=7.13.2", "pytest>=9.0.2"]
+
+[tool.pytest.ini_options]
+source = "src/bdmtx"
+markers = ["disable_autouse", "gpu"]
+addopts = ["-ra -p no:warnings"]
+testpaths = ["tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "D", "UP"]
+ignore = ["D100", "D104", "D105", "D107"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.coverage.run]
+source = ["src/bdmtx"]
+branch = true
+omit = [
+  # Omit tests files
+  "*tests*",
+  #Omit main files
+  "*main*",
+  #Omit log and exception files
+  "*log*",
+  "*scripts*",
+  "*exception*",
+  "*_version.py*",
 ]
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_also = [
+  # Have to re-enable the standard pragma
+  "pragma: no cover",
+  # Don't complain about missing debug-only code:
+  "def __repr__",
+  "if self\\.debug",
+  # Don't complain if tests don't hit defensive assertion code:
+  "raise AssertionError",
+  "raise NotImplementedError",
+  # Don't complain if non-runnable code isn't run:
+  "if 0:",
+  "if __name__ == .__main__.:",
+  # Don't complain about abstract methods, they aren't run:
+  "@(abc\\.)?abstractmethod",
+]
+ignore_errors = true
+
+[tool.coverage.html]
+directory = "coverage_html_report"

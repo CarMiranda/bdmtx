@@ -6,16 +6,17 @@ and a small wrapper to invoke ultralytics training programmatically.
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
-from typing import Dict, Any
 
 
-def make_ultralytics_dataset_yaml(root: Path, out: Path, train_fraction: float = 0.9) -> None:
+def make_ultralytics_dataset_yaml(
+    root: Path, out: Path, train_fraction: float = 0.9
+) -> None:
     """Create an Ultralytics dataset YAML file from a COCO-style folder.
 
-    Expects images+JSONs written directly under root (clean_/degraded_ pairs) or a single
-    coco.json file. This writer will create `train`/`val` lists pointing to images.
+    Expects images+JSONs written directly under root (clean_/degraded_ pairs) or a
+    single coco.json file. This writer will create `train`/`val` lists pointing to
+    images.
     """
     root = Path(root)
     out = Path(out)
@@ -43,7 +44,15 @@ def make_ultralytics_dataset_yaml(root: Path, out: Path, train_fraction: float =
         yaml.safe_dump(data, fh)
 
 
-def train_ultralytics(yaml_path: Path, epochs: int = 50, model: str = "yolov8n-seg", batch: int = 16, img_size: int = 640, project: str = 'runs/train', name: str = 'exp') -> None:
+def train_ultralytics(
+    yaml_path: Path,
+    epochs: int = 50,
+    model: str = "yolov8n-seg",
+    batch: int = 16,
+    img_size: int = 640,
+    project: str = "runs/train",
+    name: str = "exp",
+) -> None:
     """Invoke Ultralytics training using the Python API with checkpointing support.
 
     Saves checkpoints under project/name and can resume from last.pt using resume=True.
@@ -55,10 +64,17 @@ def train_ultralytics(yaml_path: Path, epochs: int = 50, model: str = "yolov8n-s
 
     model_obj = YOLO(model)
     # ultralytics will save checkpoints to runs/train/{name}
-    model_obj.train(data=str(yaml_path), epochs=epochs, batch=batch, imgsz=img_size, project=project, name=name)
+    model_obj.train(
+        data=str(yaml_path),
+        epochs=epochs,
+        batch=batch,
+        imgsz=img_size,
+        project=project,
+        name=name,
+    )
 
 
-def last_checkpoint_path(project: str = 'runs/train', name: str = 'exp') -> Path | None:
+def last_checkpoint_path(project: str = "runs/train", name: str = "exp") -> Path | None:
     """Return path to the last checkpoint (best.pt or last.pt) if present.
 
     Useful for preemptible resume logic on trainer VM.
@@ -66,8 +82,8 @@ def last_checkpoint_path(project: str = 'runs/train', name: str = 'exp') -> Path
     out = Path(project) / name
     if not out.exists():
         return None
-    best = out / 'weights' / 'best.pt'
-    last = out / 'weights' / 'last.pt'
+    best = out / "weights" / "best.pt"
+    last = out / "weights" / "last.pt"
     if best.exists():
         return best
     if last.exists():

@@ -9,12 +9,10 @@ Provides functions to:
 
 from __future__ import annotations
 
-from typing import Tuple, Optional
-
 import numpy as np
 
 
-def largest_contour_from_mask(mask: "np.ndarray") -> Tuple[Optional[np.ndarray], float]:
+def largest_contour_from_mask(mask: np.ndarray) -> tuple[np.ndarray | None, float]:
     """Return largest contour (Nx2 int coords) and its area from binary mask (0/255).
 
     Returns (contour, area) where contour is None if no contours found.
@@ -32,7 +30,7 @@ def largest_contour_from_mask(mask: "np.ndarray") -> Tuple[Optional[np.ndarray],
     return best.reshape(-1, 2), area
 
 
-def quadrilateral_from_contour(cnt: "np.ndarray") -> Optional[np.ndarray]:
+def quadrilateral_from_contour(cnt: np.ndarray) -> np.ndarray | None:
     """Approximate a quadrilateral from contour using approxPolyDP or minAreaRect.
 
     Returns 4x2 float coordinates in consistent order (tl,tr,br,bl) or None.
@@ -76,7 +74,7 @@ def quadrilateral_from_contour(cnt: "np.ndarray") -> Optional[np.ndarray]:
     return pts_ordered
 
 
-def _order_quad_points(pts: "np.ndarray") -> "np.ndarray":
+def _order_quad_points(pts: np.ndarray) -> np.ndarray:
     s = pts.sum(axis=1)
     diff = np.diff(pts, axis=1).reshape(-1)
     tl = pts[np.argmin(s)]
@@ -86,7 +84,9 @@ def _order_quad_points(pts: "np.ndarray") -> "np.ndarray":
     return np.vstack([tl, tr, br, bl]).astype(float)
 
 
-def warp_quad_to_square(image: "np.ndarray", quad: "np.ndarray", out_size: int = 256) -> "np.ndarray":
+def warp_quad_to_square(
+    image: np.ndarray, quad: np.ndarray, out_size: int = 256
+) -> np.ndarray:
     """Warp quadrilateral region to a square output of size out_size x out_size.
 
     Preserves module geometry by using INTER_NEAREST for resizing.
@@ -96,16 +96,38 @@ def warp_quad_to_square(image: "np.ndarray", quad: "np.ndarray", out_size: int =
     except Exception:
         raise RuntimeError("opencv-python is required for homography")
 
-    dst = np.array([[0.0, 0.0], [out_size - 1.0, 0.0], [out_size - 1.0, out_size - 1.0], [0.0, out_size - 1.0]], dtype=np.float32)
+    dst = np.array(
+        [
+            [0.0, 0.0],
+            [out_size - 1.0, 0.0],
+            [out_size - 1.0, out_size - 1.0],
+            [0.0, out_size - 1.0],
+        ],
+        dtype=np.float32,
+    )
     H, _ = cv2.findHomography(quad.astype(np.float32), dst)
-    warped = cv2.warpPerspective(image, H, (out_size, out_size), flags=cv2.INTER_NEAREST)
+    warped = cv2.warpPerspective(
+        image, H, (out_size, out_size), flags=cv2.INTER_NEAREST
+    )
     return warped
 
 
-def extract_and_normalize_roi(image: "np.ndarray", mask: "np.ndarray", out_size: int = 256) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
-    """Given image and binary mask, extract the largest DataMatrix ROI and return (warped_roi, quad_pts).
+def extract_and_normalize_roi(
+    image: np.ndarray, mask: np.ndarray, out_size: int = 256
+) -> tuple[np.ndarray | None, np.ndarray | None]:
+    """Extract the largest DataMatrix ROI.
 
-    Returns (None, None) if no valid ROI could be extracted.
+    Given image and binary mask, extract the largest DataMatrix ROI and return (
+    warped_roi, quad_pts).
+
+    Args:
+        image: an image
+        mask: a binary mask
+        out_size: output size
+
+
+    Returns:
+        (None, None) if no valid ROI could be extracted.
     """
     cnt, area = largest_contour_from_mask(mask)
     if cnt is None or area <= 1.0:

@@ -7,17 +7,21 @@ our SyntheticDataset and a tiny training loop for the TinyEnhancer network.
 from __future__ import annotations
 
 from pathlib import Path
+
+import cv2
+import numpy as np
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader, Dataset
-import cv2
-import numpy as np
 
 from bdmtx.data.dataset import SyntheticDataset
+
 from .enhancer import export_to_onnx
 
 
 class EnhancementTorchDataset(Dataset):
+    """Enhancement training dataset."""
+
     def __init__(self, root: Path, split: str = "train"):
         self.ds = SyntheticDataset(root, split="degraded")
 
@@ -37,6 +41,8 @@ class EnhancementTorchDataset(Dataset):
 
 
 class TinyEnhancer(nn.Module):
+    """Shallow U-net model for image enhancement."""
+
     def __init__(self):
         super().__init__()
         self.net = nn.Sequential(
@@ -48,10 +54,25 @@ class TinyEnhancer(nn.Module):
         )
 
     def forward(self, x):
+        """Forward pass.
+
+        Args:
+            x: input tensor
+        """
         return self.net(x)
 
 
 def train_enhancer(root: Path, epochs: int = 20, batch: int = 8, lr: float = 1e-3):
+    """Enhancer training entrypoint.
+
+    Train a `TinyEnhancer` on a `EnhancementTorchDataset`, then export to ONNX.
+
+    Args:
+        root: root image directory
+        epochs: number of epoch to train for
+        batch: batch size
+        lr: learning rate
+    """
     ds = EnhancementTorchDataset(root)
     dl = DataLoader(ds, batch_size=batch, shuffle=True, num_workers=2)
 
@@ -69,7 +90,7 @@ def train_enhancer(root: Path, epochs: int = 20, batch: int = 8, lr: float = 1e-
             loss.backward()
             opt.step()
             total += float(loss.item()) * inp.size(0)
-        print(f"Epoch {epoch+1}/{epochs}: loss={total/len(ds):.4f}")
+        print(f"Epoch {epoch + 1}/{epochs}: loss={total / len(ds):.4f}")
 
     # export model
     export_to_onnx(Path("models/enhancer.onnx"), input_size=256)

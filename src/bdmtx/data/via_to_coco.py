@@ -4,7 +4,8 @@ Creates a single COCO-format JSON containing all images and annotations
 found in the provided VIA JSON file. For each VIA region the converter
 produces a COCO annotation with segmentation (polygon), bbox, area and
 attributes. The datamatrix text (if present in VIA region attributes)
-is copied to annotations[].attributes["content"] and annotations[].attributes["type"] is set to "datamatrix".
+is copied to annotations[].attributes["content"] and annotations[].attributes["type"] is
+set to "datamatrix".
 
 Usage:
     python via_to_coco.py annotations_via.json /path/to/images out_coco.json
@@ -16,17 +17,17 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import numpy as np
 from PIL import Image
 
 
-def _load_via(via_path: Path) -> List[Dict[str, Any]]:
-    with open(via_path, "r", encoding="utf-8") as fh:
+def _load_via(via_path: Path) -> list[dict[str, Any]]:
+    with open(via_path, encoding="utf-8") as fh:
         data = json.load(fh)
 
-    entries: List[Dict[str, Any]] = []
+    entries: list[dict[str, Any]] = []
     if isinstance(data, dict):
         if "_via_settings" in data:
             data = data["_via_img_metadata"]
@@ -43,7 +44,7 @@ def _load_via(via_path: Path) -> List[Dict[str, Any]]:
     return entries
 
 
-def _regions_list(entry: Dict[str, Any]) -> List[Dict[str, Any]]:
+def _regions_list(entry: dict[str, Any]) -> list[dict[str, Any]]:
     regions = entry.get("regions", [])
     if isinstance(regions, dict):
         # older VIA versions use a dict mapping region-id -> region
@@ -53,8 +54,8 @@ def _regions_list(entry: Dict[str, Any]) -> List[Dict[str, Any]]:
     return []
 
 
-def _shape_to_polygons(shape: Dict[str, Any]) -> List[List[float]]:
-    """Convert VIA shape_attributes into a list of polygons (each polygon is flat [x0,y0,x1,y1,...])."""
+def _shape_to_polygons(shape: dict[str, Any]) -> list[list[float]]:
+    """Convert VIA shape_attributes into a list of polygons (flat [x0,y0,x1,y1,...])."""
     if not shape:
         return []
 
@@ -66,7 +67,7 @@ def _shape_to_polygons(shape: Dict[str, Any]) -> List[List[float]]:
         ys = shape.get("all_points_y", [])
         if len(xs) != len(ys) or len(xs) < 3:
             return []
-        poly: List[float] = []
+        poly: list[float] = []
         for x, y in zip(xs, ys):
             poly.append(float(x))
             poly.append(float(y))
@@ -98,14 +99,14 @@ def _shape_to_polygons(shape: Dict[str, Any]) -> List[List[float]]:
     return []
 
 
-def _polygon_area(poly: List[float]) -> float:
+def _polygon_area(poly: list[float]) -> float:
     coords = np.asarray(poly, dtype=np.float64).reshape(-1, 2)
     x = coords[:, 0]
     y = coords[:, 1]
     return float(abs(np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1))) / 2.0)
 
 
-def _bbox_from_poly(poly: List[float]) -> List[float]:
+def _bbox_from_poly(poly: list[float]) -> list[float]:
     coords = np.asarray(poly, dtype=np.float64).reshape(-1, 2)
     x_min = float(coords[:, 0].min())
     y_min = float(coords[:, 1].min())
@@ -135,8 +136,8 @@ def via_to_coco(
     entries = _load_via(via_json)
     breakpoint()
 
-    images: List[Dict[str, Any]] = []
-    annotations: List[Dict[str, Any]] = []
+    images: list[dict[str, Any]] = []
+    annotations: list[dict[str, Any]] = []
 
     ann_id = 1
     img_id = 1
@@ -170,7 +171,7 @@ def via_to_coco(
             h = int(entry.get("height", 0) or 0)
             if w <= 0 or h <= 0:
                 print(
-                    f"Warning: image {filename} not found and missing size metadata; skipping"
+                    f"Warning: {filename} not found and missing size metadata; skipping"
                 )
                 continue
 
@@ -192,7 +193,6 @@ def via_to_coco(
                     if isinstance(region_attrs, dict)
                     else {"_raw": region_attrs}
                 )
-                # ensure content is present in attributes["content"] if available under other keys
                 if not attributes.get("content"):
                     for k in ("content", "text", "label", "value", "chars"):
                         if k in attributes and attributes[k]:
@@ -234,7 +234,8 @@ def via_to_coco(
         json.dump(coco, fh, ensure_ascii=False, indent=2)
 
     print(
-        f"Wrote COCO JSON to {out_json} with {len(images)} images and {len(annotations)} annotations."
+        f"Wrote COCO JSON to {out_json} with {len(images)} images "
+        f"and {len(annotations)} annotations."
     )
 
 

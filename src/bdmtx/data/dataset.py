@@ -9,15 +9,15 @@ and validation helpers.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
 
 import cv2
 import numpy as np
 
 
 def build_mask_from_segmentation(
-    segmentation: List[float] | List[List[float]], width: int, height: int
+    segmentation: list[float] | list[list[float]], width: int, height: int
 ) -> np.ndarray:
     """Build a binary mask (uint8 0/255) from a COCO-style segmentation.
 
@@ -29,7 +29,7 @@ def build_mask_from_segmentation(
         return mask
 
     # Normalize to list of polygons
-    polys: List[List[float]]
+    polys: list[list[float]]
     if isinstance(segmentation[0], (int, float)):
         polys = [segmentation]  # type: ignore[assignment]
     else:
@@ -52,12 +52,12 @@ class SyntheticDataset:
     """
 
     def __init__(
-        self, root: Path, split: str = "degraded", transforms: Optional[Callable] = None
+        self, root: Path, split: str = "degraded", transforms: Callable | None = None
     ):
         self.root = Path(root)
         self.split = split
         self.transforms = transforms
-        self.samples: List[Dict] = []
+        self.samples: list[dict] = []
 
         pattern = "degraded_*.png" if split == "degraded" else "clean_*.png"
         for p in sorted(self.root.glob(pattern)):
@@ -79,7 +79,7 @@ class SyntheticDataset:
     def __len__(self) -> int:
         return len(self.samples)
 
-    def __getitem__(self, idx: int) -> Dict:
+    def __getitem__(self, idx: int) -> dict:
         s = self.samples[idx]
         img_path = s["image"]
         img = cv2.imread(str(img_path), cv2.IMREAD_COLOR)
@@ -87,11 +87,11 @@ class SyntheticDataset:
             raise FileNotFoundError(f"Failed to read image: {img_path}")
         h, w = img.shape[:2]
 
-        annotation: Dict = {}
+        annotation: dict = {}
         mask = np.zeros((h, w), dtype=np.uint8)
 
         if s["annotation"] and s["annotation"].exists():
-            with open(s["annotation"], "r", encoding="utf-8") as fh:
+            with open(s["annotation"], encoding="utf-8") as fh:
                 annotation = json.load(fh)
             anns = annotation.get("annotations", [])
             if anns:
@@ -112,7 +112,7 @@ class SyntheticDataset:
         return sample
 
 
-def simple_augmentation(sample: Dict) -> Dict:
+def simple_augmentation(sample: dict) -> dict:
     """Apply simple, fast augmentations (in-place) to a sample.
 
     - Random horizontal flip
@@ -148,7 +148,7 @@ def simple_augmentation(sample: Dict) -> Dict:
     return sample
 
 
-def validate_dataset(root: Path) -> List[str]:
+def validate_dataset(root: Path) -> list[str]:
     """Validate dataset files and annotations; return list of human-readable errors.
 
     Checks performed:
@@ -159,7 +159,7 @@ def validate_dataset(root: Path) -> List[str]:
     - segmentation area > 0
     """
     root = Path(root)
-    errors: List[str] = []
+    errors: list[str] = []
 
     imgs = sorted(root.glob("clean_*.png")) + sorted(root.glob("degraded_*.png"))
     if not imgs:
@@ -191,7 +191,7 @@ def validate_dataset(root: Path) -> List[str]:
             continue
 
         try:
-            with open(ann_p, "r", encoding="utf-8") as fh:
+            with open(ann_p, encoding="utf-8") as fh:
                 data = json.load(fh)
         except Exception as exc:  # pragma: no cover - robust reading
             errors.append(f"Failed to read JSON for idx {idx}: {exc}")

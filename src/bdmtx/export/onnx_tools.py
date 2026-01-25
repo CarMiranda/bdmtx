@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 import numpy as np
 
 
 def save_onnx_model(model_path: Path, dummy_shape: tuple[int, int, int, int]):
     """Placeholder wrapper that indicates how to export models to ONNX.
 
-    Actual export helpers are provided in respective modules (enhancement.export_to_onnx).
+    Actual export helpers are provided in respective modules
+    (enhancement.export_to_onnx).
     """
     print(f"Exported ONNX to {model_path} (dummy shape {dummy_shape})")
 

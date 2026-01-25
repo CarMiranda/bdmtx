@@ -5,9 +5,14 @@ from __future__ import annotations
 import argparse
 import sys
 
+from bdmtx.cli.eval_cli import main as eval_main
+
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="bdmtx", description="DPM preprocessing pipeline CLI")
+    """Build CLI parser."""
+    parser = argparse.ArgumentParser(
+        prog="bdmtx", description="DPM preprocessing pipeline CLI"
+    )
     sub = parser.add_subparsers(dest="command", required=False)
 
     run = sub.add_parser("run", help="Run end-to-end pipeline on an image")
@@ -23,6 +28,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI to run the full pipeline or the evaluation."""
     argv = argv if argv is not None else sys.argv[1:]
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -30,8 +36,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "run":
         print(f"Would run pipeline on: {args.image} (no-enhance={args.no_enhance})")
     elif args.command == "eval":
-        from bdmtx.cli.eval_cli import main as eval_main
-        return eval_main([args.dataset_root, "--out", args.out] + (["--max", str(args.max)] if args.max else []))
+        return eval_main(
+            [args.dataset_root, "--out", args.out]
+            + (["--max", str(args.max)] if args.max else [])
+        )
     else:
         parser.print_help()
     return 0
