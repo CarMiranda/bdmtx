@@ -13,24 +13,6 @@ resource "google_compute_subnetwork" "default" {
   network       = google_compute_network.default.name
 }
 
-resource "google_storage_bucket" "dataset" {
-  name          = var.bucket_name
-  location      = var.region
-  force_destroy = true
-  uniform_bucket_level_access = true
-}
-
-resource "google_service_account" "trainer" {
-  account_id   = var.service_account_name
-  display_name = "bdmtx training service account"
-}
-
-resource "google_storage_bucket_iam_member" "sa_storage_admin" {
-  bucket = google_storage_bucket.dataset.name
-  role   = "roles/storage.admin"
-  member = "serviceAccount:${google_service_account.trainer.email}"
-}
-
 resource "google_compute_firewall" "allow_ssh" {
   name    = "bdmtx-allow-ssh"
   network = google_compute_network.default.name
@@ -65,11 +47,11 @@ resource "google_compute_instance" "trainer" {
     preemptible         = true
   }
 
-  metadata_startup_script = file("startup.sh")
+  metadata_startup_script = file("scripts/startup.sh")
 
   metadata = {
     # shutdown-script will be executed on VM termination/preemption to upload checkpoints
-    shutdown-script = file("artifacts/preempt_hook.sh")
+    shutdown-script = file("scripts/preempt_hook.sh")
     GCS_BUCKET = var.bucket_name
   }
 

@@ -9,15 +9,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python3 -m pip install --upgrade pip setuptools wheel
 
 WORKDIR /workspace
-COPY requirements.txt /workspace/requirements.txt
 
 # Install torch with matching CUDA for the base image (example: pip wheel URL may need adjustment per CUDA/toolkit)
 # NOTE: Adjust the torch+cu version to match the target GPU driver in your VM.
 RUN pip3 install --no-cache-dir torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu121
 
 # Install remaining requirements and ultralytics
+COPY requirements.txt /workspace/requirements.txt
 RUN pip3 install --no-cache-dir -r /workspace/requirements.txt
-RUN pip3 install --no-cache-dir ultralytics
 
 # Copy workspace
 COPY . /workspace

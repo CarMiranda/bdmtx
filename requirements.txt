@@ -1,4 +1,0 @@
-# Runtime dependencies
-numpy
-opencv-python
-onnxruntime
